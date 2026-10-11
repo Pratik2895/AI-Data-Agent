@@ -1,31 +1,42 @@
 # LinkedIn post — draft
 
-I’m building on my data engineering experience to move into AI engineering. My latest project puts that transition into practice: an AI Data Agent deployed on Databricks.
+I’m taking my data engineering experience into AI engineering by building and deploying AI applications that work with data.
 
-The application lets users ask questions about customer-support data, search product manuals, and extract and transform data from an approved API through one chat interface.
+My latest project: a Multi-Agent AI Data Agent on Databricks, with three specialized workflows behind one chat interface.
 
-I built a LangGraph workflow that routes requests to three specialized paths:
+Here’s what each agent does:
 
-• SQL analyst: schema context, SQL generation, SELECT-only validation, warehouse execution, and answer formatting.
-• Document search: retrieval from extracted PDF text through Unity Catalog functions, with source filenames in responses.
-• ETL analyst: bounded tool calls for API extraction and CSV transformation, with answers grounded in executed tool results.
+🔹 SQL Analyst
+Turns a business question into a read-only query over customer-support tables. It adds schema context, generates SQL, validates it, runs an accepted query on a SQL warehouse, and explains the results.
 
-My data engineering foundation helped with the tables, schemas, and data preparation. The AI engineering work extended into agent state, tool boundaries, model serving, service-principal permissions, and end-to-end verification.
+🔹 ETL Analyst
+Extracts JSON from an approved API and transforms it using bounded tools: selecting columns, removing duplicates, dropping nulls, and inspecting CSV data. Its final summary comes from executed tool results.
 
-The deployed stack includes Python, LangGraph, MLflow ResponsesAgent, Databricks Model Serving, Unity Catalog, a SQL warehouse, Gradio, and Declarative Automation Bundles. GitHub Actions runs the offline checks.
+🔹 Knowledge Agent
+Searches extracted product-manual text through Unity Catalog functions and answers documentation questions with source filenames.
 
-Verified results:
+How does the orchestration work?
+
+User question → LangGraph router → selected specialist → data/tool execution → answer in chat.
+
+The router classifies the latest request as SQL, ETL, or KNOWLEDGE. SQL follows a staged validation and execution graph. ETL and knowledge use bounded feedback loops: call a tool, read the result, and decide the next step. Each request follows one specialist branch.
+
+What I verified in the deployed application:
 • SQL and app chat returned the warehouse-verified total of 1,023 tickets.
 • Document search answered a product question with a PDF citation.
-• ETL extracted and transformed 100 records into the requested columns.
-• All four deployment checks passed; the latest local test run passed 19 tests.
+• ETL transformed 100 API records into the requested id and title columns.
+• All four live deployment checks passed; the latest offline run passed 19 tests.
 
-One practical lesson: a successful deployment job does not guarantee a working AI application. Endpoint readiness, app permissions, and the full request path need their own checks.
+The stack: Python, LangGraph, MLflow ResponsesAgent, Databricks Model Serving, Unity Catalog, Gradio, and Declarative Automation Bundles.
 
-This is a working portfolio deployment. ETL outputs are temporary, and broader answer-quality evaluation is still a next step.
+This project connects my data engineering foundation with agent orchestration, tool design, model deployment, authentication, and end-to-end verification. It is a working portfolio deployment; ETL outputs are temporary, and broader answer-quality evaluation is a next step.
 
-I’m looking for AI Engineer and Applied AI Engineer opportunities where I can combine data engineering experience with agent development, LLM application integration, and deployment. If your team is hiring for that work, I’d welcome a conversation.
+I’m looking for AI Engineer / Applied AI Engineer opportunities where I can build on that combination. If your team is hiring, I’d welcome a conversation.
 
-Project: https://github.com/Pratik2895/ai-data-agent
+Architecture, screenshots, and a guide to adapting it to your own project:
+https://pratik2895.github.io/ai-data-agent/
+
+Source code:
+https://github.com/Pratik2895/ai-data-agent
 
 #AIEngineering #DataEngineering #Databricks #LangGraph #OpenToWork
