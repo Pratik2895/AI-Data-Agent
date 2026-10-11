@@ -34,7 +34,7 @@ This project connects my data engineering foundation with agent orchestration, t
 I’m looking for AI Engineer / Applied AI Engineer opportunities where I can build on that combination. If your team is hiring, I’d welcome a conversation.
 
 Architecture, screenshots, and a guide to adapting it to your own project:
-https://pratik2895.github.io/ai-data-agent/
+https://pratik2895.github.io/AI-Data-Agent/
 
 Source code:
 https://github.com/Pratik2895/ai-data-agent

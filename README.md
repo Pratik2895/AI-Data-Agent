@@ -2,7 +2,7 @@
 
 ## Start with v0.1.0
 
-**Bring your own data:** [release quickstart](docs/QUICKSTART.md) · [published guide](https://pratik2895.github.io/ai-data-agent/quickstart.html) · [download v0.1.0](https://github.com/Pratik2895/ai-data-agent/releases/tag/v0.1.0).
+**Bring your own data:** [release quickstart](docs/QUICKSTART.md) · [published guide](https://pratik2895.github.io/AI-Data-Agent/quickstart.html) · [download v0.1.0](https://github.com/Pratik2895/ai-data-agent/releases/tag/v0.1.0).
 
 The `starter/` generator creates a standalone bundle from validated JSON configuration. Start with `examples/sales/project.json` and the included fictional five-row CSV. Choose existing tables or non-overwriting CSV ingestion, enable SQL/ETL/knowledge agents, configure models and expected answers, then generate your own deployment.
 
@@ -55,7 +55,7 @@ The app sends conversation history to the serving endpoint. The SQL workflow use
 
 ## Project showcase
 
-Explore the [Multi-Agent Architecture site](https://pratik2895.github.io/ai-data-agent/) for the architecture diagram, working-app screenshot, deployed resources, usage examples, and a guide to adapting the project to your own workspace.
+Explore the [Multi-Agent Architecture site](https://pratik2895.github.io/AI-Data-Agent/) for the architecture diagram, working-app screenshot, deployed resources, usage examples, and a guide to adapting the project to your own workspace.
 
 ## Deployment status
 
