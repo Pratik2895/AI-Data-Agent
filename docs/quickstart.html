@@ -1,0 +1,146 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>v0.1.0 Starter Kit — Quickstart</title><link rel="stylesheet" href="site.css"><style>main{max-width:960px;padding-bottom:60px}h1{font-size:44px;letter-spacing:-1px}h2{font-size:30px;margin-top:48px}li{color:#afbed0}pre,pre code{white-space:pre-wrap}</style></head><body><header><a href="index.html">Architecture showcase</a><a href="https://github.com/Pratik2895/ai-data-agent/releases/tag/v0.1.0">Download v0.1.0</a></header><main><h1>v0.1.0: build your own Databricks agent</h1>
+<p>This release generates a <strong>separate project</strong> from a JSON configuration. The root
+bundle is the author's customer-support example; do not deploy it into your
+workspace unchanged. Start from the versioned release or GitHub template.</p>
+<h2>1. Prerequisites</h2>
+<ul>
+<li>Python 3.11, uv, Git and Databricks CLI 1.0 or newer.</li>
+<li>A Databricks workspace with serverless notebook jobs, Model Serving, Apps,
+Unity Catalog and a SQL warehouse. Use your own account and compute budget.</li>
+<li>Access to the configured LLM endpoints. The example names are suggestions;
+verify availability and tool-calling support in your workspace.</li>
+<li>An existing catalog/schema dedicated to this project. For CSV/PDF onboarding,
+create a managed volume in it and grant the job identity read access to its files.</li>
+<li>The job identity needs USE CATALOG/SCHEMA, SELECT on existing source tables,
+warehouse CAN USE, function/model creation privileges, and table creation for
+ingestion. App deployment and serving creation need appropriate workspace rights.
+Exact grants depend on your workspace policies; preflight does not grant access.</li>
+</ul>
+<p>All configured tables must belong to the same catalog/schema. v0.1.0 supports
+simple names containing letters, digits and underscores, starting with a letter
+or underscore. Table descriptions are context for the model, not executable code.</p>
+<h2>2. Install and configure</h2>
+<pre><code class="language-powershell">git clone https://github.com/Pratik2895/ai-data-agent.git
+cd ai-data-agent
+git checkout v0.1.0
+uv venv --python 3.11
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt -r requirements-starter.txt -r src/app/requirements.txt pytest
+databricks auth login --profile my-workspace
+Copy-Item examples/sales/project.json my-project.json
+</code></pre>
+<p>On macOS/Linux use <code>.venv/bin/python</code> and <code>cp</code> instead of the Windows commands.
+Edit <code>my-project.json</code>: profile, HTTPS host, warehouse, catalog/schema/volume,
+project name, models, table descriptions, enabled agents and checks. No tokens or
+secrets belong in this file. Keep it private if it contains sensitive resource names.</p>
+<p>The sales example enables SQL only and expects <strong>five orders</strong>. <code>checks[].contains</code>
+is a case-insensitive substring check, not an exact numeric or semantic evaluator;
+choose discriminating expected values and review outputs. For another dataset,
+replace both the questions and expectations with facts you have verified.</p>
+<h2>3. Bring your data</h2>
+<p><strong>CSV mode:</strong> upload <code>examples/sales/orders.csv</code> to
+<code>/Volumes/&lt;catalog&gt;/&lt;schema&gt;/&lt;volume&gt;/orders.csv</code>. One CSV per configured table,
+with a header row. For example:</p>
+<pre><code class="language-powershell">databricks fs cp examples/sales/orders.csv dbfs:/Volumes/YOUR_CATALOG/YOUR_SCHEMA/YOUR_VOLUME/orders.csv --profile my-workspace
+</code></pre>
+<p>The job infers column types and creates Delta tables. It refuses to overwrite
+existing business tables. On subsequent setup runs, change <code>mode</code> to <code>existing</code>
+and regenerate the bundle. Ingestion is not transactional across multiple tables;
+after a partial failure inspect the created tables before rerunning. For strict
+typing or large production datasets, prepare governed tables yourself.</p>
+<p><strong>Existing mode:</strong> set <code>mode</code> to <code>existing</code> and list your current tables. Setup
+verifies them and creates schema context without rewriting their data.</p>
+<p><strong>Optional documents:</strong> add <code>KNOWLEDGE</code> to <code>agents</code> and put PDFs in
+<code>/Volumes/&lt;catalog&gt;/&lt;schema&gt;/&lt;volume&gt;/documents/</code>. Setup refreshes the reserved
+derived table <code>product_docs</code>; do not store unrelated data in that name. Only
+text PDFs are supported, not scanned documents without prior OCR. PDF ingestion
+collects text on the driver and is intended for small document collections.</p>
+<p><strong>Optional ETL:</strong> add <code>ETL</code> and explicitly list approved public API hostnames in
+<code>allowed_hosts</code>. The APIs must return JSON without separate credentials; redirects
+are rejected. The example <code>jsonplaceholder.typicode.com</code> is an external test API,
+not included data. Output CSVs live temporarily on a serving instance, so requests
+to different instances or after scale-to-zero may not find earlier files.</p>
+<h2>4. Validate and generate</h2>
+<pre><code class="language-powershell">.venv/Scripts/python.exe -m starter.preflight --config my-project.json
+.venv/Scripts/python.exe -m starter.preflight --config my-project.json --online
+.venv/Scripts/python.exe -m starter.generate --config my-project.json --output generated/my-agent
+cd generated/my-agent
+databricks bundle validate --strict --profile my-workspace
+</code></pre>
+<p>The generator refuses existing output directories. Configuration is baked into
+notebooks: editing the generated <code>project.json</code> alone does not reconfigure the
+runtime. Edit your original config and generate into a new directory, retaining
+the same project name and deployment target to update the same bundle.</p>
+<p>The App resource is staged in <code>app.resource.yml</code> until the endpoint exists.
+Generated app names default to a project prefix plus the current user's domain-
+friendly name. Inspect the resolved name: lowercase letters/digits/hyphens, at
+most 30 characters. If too long, persist a unique shorter name in
+<code>.databricks/bundle/dev/variable-overrides.json</code>:</p>
+<pre><code class="language-json">{&quot;app_name&quot;:&quot;sales-agent-yourname&quot;,&quot;endpoint_name&quot;:&quot;sales-agent-yourname-endpoint&quot;}
+</code></pre>
+<p>Choose resource names unique to you. Preserve this override when regenerating.
+Inspect the validated bundle before deploying; setup can incur compute charges.</p>
+<h2>5. Deploy and wait for serving</h2>
+<pre><code class="language-powershell">databricks bundle deploy --profile my-workspace
+databricks bundle run setup --profile my-workspace
+uv run --no-project --with PyYAML==6.0.3 python enable_app.py
+databricks bundle validate --strict --profile my-workspace
+databricks bundle deploy --profile my-workspace
+databricks bundle run agent_app --profile my-workspace
+</code></pre>
+<p>The job prepares data, creates only enabled tools, logs the configured model
+resources, and deploys the endpoint. It waits up to 30 minutes for READY /
+NOT_UPDATING and 100% traffic to the new version. Failed or timed-out provisioning
+fails the job. Inspect serving logs/capacity before rerunning; repeated model
+deployments may retain old versions and consume free-tier concurrency.</p>
+<p>Enable the App after the endpoint is ready, so resource binding never references
+a nonexistent endpoint. Rerunning <code>enable_app.py</code> is safe. Inspect the resolved
+app name and apply a shorter override if needed before the second deployment.</p>
+<p>Apps use uploaded local source by default. If your workspace requires Git-backed
+Apps, commit the generated project to your own repository. Replace the App's
+<code>source_code_path</code> in its bundle with:</p>
+<pre><code class="language-yaml">git_repository:
+  url: https://github.com/YOUR_ORG/YOUR_GENERATED_PROJECT.git
+  provider: gitHub
+git_source:
+  branch: main
+  source_code_path: src/app
+</code></pre>
+<p>Configure Databricks Git access and push before deployment. If the generated
+project is in a repository subfolder, include that prefix in <code>source_code_path</code>.</p>
+<h2>6. Verify the full request path</h2>
+<p>From your generated directory, install its verification dependencies in a local
+environment, then use the actual resolved resource names:</p>
+<pre><code class="language-powershell">uv venv --python 3.11
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt
+.venv/Scripts/python.exe verify.py --endpoint YOUR_ENDPOINT --app YOUR_APP
+</code></pre>
+<p>Each configured question is checked against both the serving endpoint and the
+app API. The report is local and contains answers, not credentials. Review it
+before sharing if your data is sensitive. The App's resource binding requests
+CAN_QUERY. If an endpoint was recreated, inspect that permission for the app
+service principal; reapply it through your authorized workspace process.</p>
+<h2>Security and customization</h2>
+<ul>
+<li>SQL executes with serving credentials and a configured table allowlist, in
+addition to Unity Catalog permissions. It cannot modify business tables.</li>
+<li>Apps use their service principal. Every authorized app user shares that data
+access; this release does not implement per-user data authorization.</li>
+<li>The router chooses one enabled specialist per request. It does not automatically
+chain all agents together. ETL/document loops have a 20-step limit.</li>
+<li>API hostname allowlisting is not a replacement for workspace egress controls;
+use only trusted hosts. No arbitrary generated Python is executed.</li>
+<li>Add evaluation cases for your domain before production use. No accuracy or
+safety guarantee follows from a handful of smoke tests.</li>
+<li>For new tools, extend <code>src/agents/runtime.py</code> and the specialist graph, declare
+required resources in the deployment notebook, and add tests.</li>
+</ul>
+<h2>Updating and cleanup</h2>
+<p>Keep your config and generated bundle in your own version control. Review release
+changes before regenerating and redeploying. Pin a release tag for reproducibility.
+There are no breaking-change guarantees before 1.0.</p>
+<p><code>databricks bundle destroy</code> removes bundle-managed jobs/apps after confirmation;
+it does <strong>not</strong> remove notebook-created tables/functions, volumes, registered
+models or serving endpoints. Inventory those by your project namespace and remove
+only resources you own through Databricks. Do not delete a shared warehouse or catalog.</p>
+<p>The fictional five-row CSV is included under the repository's MIT license.</p>
+</main></body></html>

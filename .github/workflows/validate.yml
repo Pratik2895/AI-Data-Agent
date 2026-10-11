@@ -14,6 +14,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: uv venv
-      - run: uv pip install -r requirements.txt -r src/app/requirements.txt pytest
+      - run: uv pip install -r requirements.txt -r requirements-starter.txt -r src/app/requirements.txt pytest
       - run: uv run --no-project python -m pytest -q tests
       - run: uv run --no-project python -m compileall -q src main.py
+      - run: uv run --no-project python -m starter.generate --config examples/sales/project.json --output /tmp/generated-agent

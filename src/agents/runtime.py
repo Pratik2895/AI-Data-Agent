@@ -21,12 +21,15 @@ def validate_sql(sql):
             raise ValueError("Unapproved SQL function")
     catalog = os.getenv("CATALOG", "ai_agent_demo")
     schema = os.getenv("SCHEMA", "customer_support")
+    allowed = {name.lower() for name in json.loads(os.getenv("AGENT_TABLES", "[]"))}
     ctes = {cte.alias_or_name for cte in tree.find_all(exp.CTE)}
     for table in tree.find_all(exp.Table):
         if not table.db and not table.catalog and table.name in ctes:
             continue
         if table.catalog != catalog or table.db != schema:
             raise ValueError("Queries must stay within the configured catalog and schema")
+        if allowed and table.name.lower() not in allowed:
+            raise ValueError("Table is not in the configured allowlist")
     return tree.sql(dialect="databricks")
 
 

@@ -1,0 +1,16 @@
+{
+  "name": "sales-agent",
+  "description": "Answer questions about orders and sales performance.",
+  "profile": "my-workspace",
+  "host": "https://YOUR-WORKSPACE.cloud.databricks.com",
+  "warehouse_id": "YOUR_WAREHOUSE_ID",
+  "catalog": "my_catalog",
+  "schema": "sales_agent",
+  "volume": "input_files",
+  "mode": "csv",
+  "tables": [{"name": "orders", "description": "One row per order, with amount and status."}],
+  "agents": ["SQL"],
+  "allowed_hosts": [],
+  "models": {"low": "databricks-gpt-oss-20b", "medium": "databricks-gpt-oss-20b", "high": "databricks-llama-4-maverick"},
+  "checks": [{"question": "How many orders are there? Answer with the number.", "contains": ["5"]}]
+}

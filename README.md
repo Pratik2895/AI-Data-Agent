@@ -1,4 +1,14 @@
-# AI Data Agent
+# Databricks Multi-Agent Starter Kit
+
+## Start with v0.1.0
+
+**Bring your own data:** [release quickstart](docs/QUICKSTART.md) · [published guide](https://pratik2895.github.io/ai-data-agent/quickstart.html) · [download v0.1.0](https://github.com/Pratik2895/ai-data-agent/releases/tag/v0.1.0).
+
+The `starter/` generator creates a standalone bundle from validated JSON configuration. Start with `examples/sales/project.json` and the included fictional five-row CSV. Choose existing tables or non-overwriting CSV ingestion, enable SQL/ETL/knowledge agents, configure models and expected answers, then generate your own deployment.
+
+The root bundle and setup commands below are the original customer-support **reference deployment**, not generic onboarding. New users should follow the release quickstart. See [CHANGELOG](CHANGELOG.md) for scope and limitations. MIT licensed.
+
+## Reference project
 
 AI Data Agent is a conversational assistant for customer-support data on Databricks. Users ask questions in plain English, and the agent routes each request to a SQL analyst, an ETL workflow, or a product-document search tool. It brings structured customer-service data and PDF documentation into one chat interface.
 

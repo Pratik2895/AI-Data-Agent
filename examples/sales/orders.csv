@@ -1,0 +1,6 @@
+order_id,customer_id,amount,status
+1,C001,120.00,completed
+2,C002,80.00,pending
+3,C003,240.00,completed
+4,C001,60.00,cancelled
+5,C004,100.00,completed

@@ -239,7 +239,7 @@ def _add_context(state: SQLAgentState) -> SQLAgentState:
     """
     schema_info = _execute_sql_sdk(f"SELECT {CATALOG}.{SCHEMA}.get_schema_info()")
     if "Error" in schema_info:
-        schema_info = f"Tables: {CATALOG}.{SCHEMA}.cust_service_data, {CATALOG}.{SCHEMA}.policies"
+        raise RuntimeError("Schema context unavailable; refresh the project tools")
 
     prompt = f"""You are a SQL analyst agent. Convert the user's question into a valid Databricks SQL query.
 
@@ -444,7 +444,7 @@ def _build_knowledge_search_graph():
     llm = pick_llm("medium")
 
     system_prompt = (
-        "You are a knowledge search agent for customer support. You have access to "
+        "You are a knowledge search agent. You have access to "
         "product documentation stored in Databricks. Use the search_product_docs tool "
         "to find relevant product information and answer the user's question. "
         "If no relevant documentation is found, say so clearly. Cite the document filenames returned by the tool."
@@ -500,19 +500,24 @@ def _build_data_agent_graph():
     llm = pick_llm("high")  # High-end LLM for accurate routing decisions
     llm_router = llm.with_structured_output(RouterSchema)
 
-    sql_analyst = _build_sql_analyst_graph()
-    etl_analyst = _build_etl_analyst_graph()
-    knowledge_agent = _build_knowledge_search_graph()
+    enabled = {s.strip().upper() for s in os.getenv("ENABLED_AGENTS", "SQL,ETL,KNOWLEDGE").split(",")}
+    if not enabled or not enabled <= {"SQL", "ETL", "KNOWLEDGE"}:
+        raise ValueError("ENABLED_AGENTS must name SQL, ETL, and/or KNOWLEDGE")
+    sql_analyst = _build_sql_analyst_graph() if "SQL" in enabled else None
+    etl_analyst = _build_etl_analyst_graph() if "ETL" in enabled else None
+    knowledge_agent = _build_knowledge_search_graph() if "KNOWLEDGE" in enabled else None
 
     def _router_node(state: DataAgentState) -> dict:
         """AI-DECIDE: Classify the user query and route to the right sub-agent."""
         message = state.messages[-1].content if state.messages else ""
         router_prompt = f"""You are a router for a multi-agent data system. Classify the user's question:
 
-- Answer 'SQL' for data retrieval, analytics, aggregations, or queries about customer service data, policies, or products.
+- Answer 'SQL' for data retrieval, analytics, aggregations, or queries about configured tables.
 - Answer 'ETL' for extracting, transforming, loading, or fetching data from external sources.
 - Answer 'KNOWLEDGE' for questions about product documentation, specs, features, or manuals.
 
+Project context: {os.getenv('PROJECT_DESCRIPTION', 'Data and document assistant')}
+Enabled workflows: {', '.join(sorted(enabled))}. Select the appropriate category even if it is disabled; disabled requests will be declined.
 User question: {message}"""
         response = llm_router.invoke(router_prompt)
         result = response.model_dump() if hasattr(response, 'model_dump') else {"answer": "SQL"}
@@ -547,6 +552,8 @@ User question: {message}"""
 
     def _router_edge(state: DataAgentState) -> str:
         route = state.route.upper()
+        if route not in enabled:
+            return "unavailable_node"
         if route == "ETL":
             return "etl_node"
         elif route == "KNOWLEDGE":
@@ -555,13 +562,17 @@ User question: {message}"""
 
     graph = StateGraph(DataAgentState)
     graph.add_node("router_node", RunnableLambda(_router_node))
+    graph.add_node("unavailable_node", RunnableLambda(lambda state: {
+        "final_answer": "This workflow is not enabled for this project. Available workflows: " + ", ".join(sorted(enabled))
+    }))
     graph.add_node("sql_node", RunnableLambda(_sql_node))
     graph.add_node("etl_node", RunnableLambda(_etl_node))
     graph.add_node("knowledge_node", RunnableLambda(_knowledge_node))
 
     graph.add_edge(START, "router_node")
     graph.add_conditional_edges("router_node", _router_edge,
-        {"sql_node": "sql_node", "etl_node": "etl_node", "knowledge_node": "knowledge_node"})
+        {"sql_node": "sql_node", "etl_node": "etl_node", "knowledge_node": "knowledge_node", "unavailable_node": "unavailable_node"})
+    graph.add_edge("unavailable_node", END)
     graph.add_edge("sql_node", END)
     graph.add_edge("etl_node", END)
     graph.add_edge("knowledge_node", END)
