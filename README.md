@@ -43,17 +43,15 @@ The app sends conversation history to the serving endpoint. The SQL workflow use
 | `scripts/verify_deployment.py` | Live SQL, document-search, ETL, and app checks. |
 | `tests/test_runtime.py` | Offline runtime and agent tests. |
 
+## Project showcase
+
+Explore the [Multi-Agent Architecture site](https://pratik2895.github.io/ai-data-agent/) for the architecture diagram, working-app screenshot, deployed resources, usage examples, and a guide to adapting the project to your own workspace.
+
 ## Deployment status
 
-Last checked **October 11, 2026**. This is a dated operational snapshot, not a live health indicator.
+Verified **October 11, 2026**: model version **5** is READY / NOT_UPDATING and the Databricks app is RUNNING. All four live deployment checks passed: SQL returned the warehouse-verified 1,023 tickets, document search cited a product PDF, ETL transformed 100 rows into `id` and `title`, and app chat returned the correct ticket count. The latest offline run passed 19 tests.
 
-- Implementation and ETL response-formatting fixes are merged into `main`. The last local test run passed all 19 tests.
-- The DAB setup job completed successfully, loading three CSV tables and extracting 509 PDFs. Run ID: `184370860420251`.
-- Model version 3 previously passed live SQL, document-search, ETL execution, and app-chat checks. SQL returned the verified count of 1,023 tickets. Its ETL answer exposed tool transcript text; the merged fix addresses that presentation issue.
-- Final live verification of version 4 is outstanding. At the latest check, `ai_data_agent_endpoint` did not exist, and `ai-data-agent-app` was stopped with a workspace/account-status message.
-- To restore operation, resolve workspace/account availability, redeploy the serving endpoint and app, confirm endpoint readiness, and run the verification script below. A successful setup job alone does not confirm that asynchronous serving provisioning completed.
-
-The implementation is available, but the hosted application is currently offline. ETL files remain temporary, and document search uses extracted text rather than a Vector Search index; see the runtime limitations below.
+The setup job loaded three CSV tables and extracted 509 PDFs. ETL files remain temporary; document retrieval uses lexical matching over extracted text. These checks verify the tested paths, not universal answer accuracy or production readiness. This is a dated snapshot, not a live status monitor.
 
 ## Setup
 
